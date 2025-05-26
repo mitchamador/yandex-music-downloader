@@ -102,7 +102,7 @@ def full_title(obj: YandexMusicModel) -> str:
 
 
 def prepare_base_path(
-    path_pattern: Path, track: Track, unsafe_path: bool = False
+    path_pattern: Path, track: Track, unsafe_path: bool = False, counter: str = ""
 ) -> Path:
     path_str = str(path_pattern)
     album = None
@@ -128,6 +128,7 @@ def prepare_base_path(
         "#title": full_title(track),
         "#album": full_title(album) if album else None,
         "#year": album.year if album else None,
+        "#counter": counter,
     }
     for placeholder, replacement in repl_dict.items():
         replacement = str(replacement)

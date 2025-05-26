@@ -180,7 +180,7 @@ def main():
         help=show_default(
             "Поддерживает следующие заполнители:"
             " #number, #artist, #album-artist, #title,"
-            " #album, #year, #artist-id, #album-id, #track-id, #number-padded"
+            " #album, #year, #artist-id, #album-id, #track-id, #number-padded, #counter"
         ),
     )
 
@@ -279,16 +279,21 @@ def main():
 
         result_tracks = playlist_tracks_gen()
 
+    result_tracks_list = list(result_tracks)
+    track_number = 0
+
     covers_cache = {}
-    for track in result_tracks:
+    for track in result_tracks_list:
         if not track.available:
             print(f"Трек {track.title} не доступен для скачивания")
             continue
 
+        track_number += 1
         save_path = args.dir / core.prepare_base_path(
             args.path_pattern,
             track,
             args.unsafe_path,
+            str(track_number).zfill(len(str(len(result_tracks_list)))),
         )
         if args.skip_existing:
             if any(
