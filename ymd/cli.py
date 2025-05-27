@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Optional, Union
 from urllib.parse import urlparse
 
-from yandex_music import Album, Playlist, Track
+from yandex_music import Album, Playlist, GeneratedPlaylist, Track, ChartInfo, Landing
 
 from ymd import core
 
@@ -157,6 +157,17 @@ def main():
         "--playlist-id",
         metavar="<владелец плейлиста>/<тип плейлиста>",
     )
+    id_group.add_argument("--chart",
+        action='store', const='', nargs='?',
+        metavar="постфикс к запросу из поля `menu` чарта",
+        help="Например, на сайте можно выбрать глобальный (world) чарт или российский (russia)."
+    )
+    id_group.add_argument("--personal-playlist",
+        metavar="тип плейлиста",
+        const='playlistOfTheDay', nargs='?',
+        help="Поддерживаются следующие типы сгенерированных плейлистов: "
+             "playlistOfTheDay (по умолчанию), recentTracks, neverHeard, missedLikes"
+    )
     id_group.add_argument("-u", "--url", help="URL исполнителя/альбома/трека/плейлиста")
 
     path_group = parser.add_argument_group("Указание пути")
@@ -223,6 +234,7 @@ def main():
 
     client = core.init_client(args.token, args.timeout)
     result_tracks: Iterable[Track] = []
+    playlist = None
 
     def album_tracks_gen(album_ids: Iterable[Union[int, str]]) -> Generator[Track]:
         for album_id in album_ids:
@@ -269,14 +281,28 @@ def main():
     elif args.playlist_id is not None:
         user, kind = args.playlist_id.split("/")
         playlist = typing.cast(Playlist, client.users_playlists(kind, user))
+    elif args.chart is not None:
+        chart_info = typing.cast(ChartInfo, client.chart(args.chart))
+        playlist = chart_info.chart
+    elif args.personal_playlist is not None:
+        landing = typing.cast(Landing, client.landing("personalplaylists"))
+        for block in landing.blocks:
+            if block.type == 'personal-playlists':
+                for entity in block.entities:
+                    if entity.type == 'personal-playlist':
+                        generated_playlist = typing.cast(GeneratedPlaylist, entity.data)
+                        if generated_playlist.type == args.personal_playlist:
+                            playlist = typing.cast(Playlist, client.users_playlists(generated_playlist.data.kind, generated_playlist.data.uid))
+                            break
+                break
 
+    if playlist is not None:
         def playlist_tracks_gen() -> Generator[Track]:
             tracks = playlist.fetch_tracks()
             for i in range(0, len(tracks), FETCH_PAGE_SIZE):
                 yield from client.tracks(
                     [track.id for track in tracks[i : i + FETCH_PAGE_SIZE]]
                 )
-
         result_tracks = playlist_tracks_gen()
 
     result_tracks_list = list(result_tracks)
