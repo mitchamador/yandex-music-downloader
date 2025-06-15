@@ -223,7 +223,7 @@ def main():
         help=show_default(
             "Поддерживает следующие заполнители:"
             " #number, #artist, #album-artist, #title,"
-            " #album, #year, #artist-id, #album-id, #track-id, #number-padded, #counter"
+            " #album, #year, #artist-id, #album-id, #track-id, #number-padded"
         ),
     )
 
