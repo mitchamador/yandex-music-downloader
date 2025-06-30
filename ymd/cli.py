@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 
 from yandex_music import Album, Playlist, GeneratedPlaylist, Track, ChartInfo, Landing
 
-from ymd import core
+from ymd import core, api
 
 DEFAULT_DELAY = 0
 
@@ -85,6 +85,12 @@ def main():
         default=0,
         type=quality_arg,
         help="Качество трека:\n0 - Низкое (AAC 64kbps)\n1 - Оптимальное (AAC 192kbps)\n2 - Лучшее (FLAC)\n(по умолчанию: %(default)s)",
+    )
+    common_group.add_argument(
+        "--codecs",
+        metavar="<Кодеки>",
+        default=",".join(api.FILE_FORMAT_MAPPING.keys()),
+        help="Кодеки для трека:\n%(default)s\n(по умолчанию - все форматы)",
     )
     common_group.add_argument(
         "--skip-existing", action="store_true", help="Пропускать уже загруженные треки"
@@ -331,7 +337,7 @@ def main():
         if not save_dir.is_dir():
             save_dir.mkdir(parents=True)
 
-        downloadable = core.to_downloadable_track(track, args.quality, save_path)
+        downloadable = core.to_downloadable_track(track, args.quality, save_path, args.codecs)
         bitrate = downloadable.download_info.bitrate
         format_info = "[" + downloadable.download_info.file_format.codec.name
         if bitrate > 0:

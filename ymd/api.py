@@ -57,7 +57,7 @@ class CustomDownloadInfo:
     bitrate: int
 
 
-def get_download_info(track: Track, quality: ApiTrackQuality) -> CustomDownloadInfo:
+def get_download_info(track: Track, quality: ApiTrackQuality, codecs: str = ",".join(FILE_FORMAT_MAPPING.keys())) -> CustomDownloadInfo:
     client = track.client
     assert client
     timestamp = int(time.time())
@@ -65,7 +65,7 @@ def get_download_info(track: Track, quality: ApiTrackQuality) -> CustomDownloadI
         "ts": timestamp,
         "trackId": track.id,
         "quality": quality,
-        "codecs": ",".join(FILE_FORMAT_MAPPING.keys()),
+        "codecs": codecs,
         "transports": "encraw",
     }
     hmac_sign = hmac.new(

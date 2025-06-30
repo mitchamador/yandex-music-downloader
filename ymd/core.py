@@ -337,7 +337,7 @@ def download_track(
 
 
 def to_downloadable_track(
-    track: Track, quality: CoreTrackQuality, base_path: Path
+    track: Track, quality: CoreTrackQuality, base_path: Path, codecs: str
 ) -> DownloadableTrack:
     api_quality = ApiTrackQuality.NORMAL
     if quality == CoreTrackQuality.LOW:
@@ -347,7 +347,7 @@ def to_downloadable_track(
     elif quality == CoreTrackQuality.LOSSLESS:
         api_quality = ApiTrackQuality.LOSSLESS
 
-    download_info = get_download_info(track, api_quality)
+    download_info = get_download_info(track, api_quality, codecs)
     container = download_info.file_format.container
 
     if container == Container.MP3:
