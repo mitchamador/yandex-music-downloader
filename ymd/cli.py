@@ -357,10 +357,6 @@ def main():
             ):
                 continue
 
-        save_dir = save_path.parent
-        if not save_dir.is_dir():
-            save_dir.mkdir(parents=True)
-
         downloadable = core.to_downloadable_track(track, args.quality, save_path, args.codecs)
         bitrate = downloadable.download_info.bitrate
         format_info = "[" + downloadable.download_info.file_format.codec.name
@@ -370,6 +366,9 @@ def main():
         print(f"{progress_status}{format_info} Загружается {downloadable.path}")
 
         if not args.dry_run:
+            if not save_path.parent.is_dir():
+                save_path.parent.mkdir(parents=True)
+
             core.download_track(
                 track_info=downloadable,
                 lyrics_format=args.lyrics_format,
