@@ -86,6 +86,9 @@ def main():
         "--skip-existing", action="store_true", help="Пропускать уже загруженные треки"
     )
     common_group.add_argument(
+        "--dry-run", action="store_true", help="Тестовый режим (не загружать треки)"
+    )
+    common_group.add_argument(
         "--lyrics-format",
         type=lyrics_format_arg,
         default=core.LyricsFormat.NONE,
@@ -206,8 +209,8 @@ def main():
         type=Path,
         help=show_default(
             "Поддерживает следующие заполнители:"
-            " #number, #artist, #album-artist, #title,"
-            " #album, #year, #artist-id, #album-id, #track-id, #number-padded"
+            " #number, #artist, #album-artist, #track-artist, #title,"
+            " #album, #year, #artist-id, #album-id, #track-id, #number-padded, #counter"
         ),
     )
 
@@ -316,6 +319,8 @@ def main():
                             playlist = typing.cast(Playlist, client.users_playlists(generated_playlist.data.kind, generated_playlist.data.uid))
                             break
                 break
+    else:
+        raise ValueError("Invalid ID argument")
 
     if playlist is not None:
         def playlist_tracks_gen() -> Generator[Track]:
@@ -327,20 +332,24 @@ def main():
         result_tracks = playlist_tracks_gen()
 
     result_tracks_list = list(result_tracks)
-    track_number = 0
+
+    track_counter = 0
+    total_track_count = len(result_tracks_list)
 
     covers_cache = {}
     for track in result_tracks_list:
+        track_counter += 1
+        progress_status = f"[{track_counter}/{total_track_count}] "
+
         if not track.available:
-            print(f"Трек {track.title} не доступен для скачивания")
+            print(f"{progress_status}Трек {track.title} не доступен для скачивания")
             continue
 
-        track_number += 1
         save_path = args.dir / core.prepare_base_path(
             args.path_pattern,
             track,
             args.unsafe_path,
-            str(track_number).zfill(len(str(len(result_tracks_list)))),
+            str(track_counter).zfill(len(str(total_track_count))),
         )
         if args.skip_existing:
             if any(
@@ -358,14 +367,16 @@ def main():
         if bitrate > 0:
             format_info += f" {bitrate}kbps"
         format_info += "]"
-        print(f"{format_info} Загружается {downloadable.path}")
-        core.download_track(
-            track_info=downloadable,
-            lyrics_format=args.lyrics_format,
-            embed_cover=args.embed_cover,
-            cover_resolution=args.cover_resolution,
-            covers_cache=covers_cache,
-            compatibility_level=args.compatibility_level,
-        )
+        print(f"{progress_status}{format_info} Загружается {downloadable.path}")
+
+        if not args.dry_run:
+            core.download_track(
+                track_info=downloadable,
+                lyrics_format=args.lyrics_format,
+                embed_cover=args.embed_cover,
+                cover_resolution=args.cover_resolution,
+                covers_cache=covers_cache,
+                compatibility_level=args.compatibility_level,
+            )
         if args.delay > 0:
             time.sleep(args.delay)

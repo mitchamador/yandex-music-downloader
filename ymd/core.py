@@ -151,6 +151,7 @@ def prepare_base_path(
         else None,
         "#album-artist": album_artist.name if album_artist else None,
         "#track-artist": track_artist.name if track_artist else None,
+        "#artist": album_artist.name if album_artist else track_artist.name if track_artist else None,
         "#artist-id": track_artist.id if track_artist else None,
         "#album-id": album.id if album else None,
         "#track-id": track.id,
